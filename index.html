@@ -161,7 +161,16 @@ function checkout(){
  if(!cart.length){alert('السلة فارغة');return}
  if(paid<total){alert(lang==='ar'?'المبلغ المدفوع غير كافٍ':'Montant insuffisant');return}
  cart.forEach(x=>{let p=products.find(p=>p.id===x.id);p.qty-=x.qty});
- sales.push({date:new Date().toISOString(),total});
+ sales.push({
+  date: new Date().toISOString(),
+  total,
+  items: cart.map(x => ({
+    id: x.id,
+    name: x.name,
+    price: x.price,
+    qty: x.qty
+  }))
+});
  save();cart=[];$('paid').value='';updateCart();showStock();showProducts();report();
  alert(lang==='ar'?'تم البيع بنجاح':'Vente réussie');
 }

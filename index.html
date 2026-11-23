@@ -45,12 +45,6 @@ button{cursor:pointer}
 <div class="card">
 <h2 id="saleTitle">نقطة البيع</h2>
 <input id="search" placeholder="ابحث عن منتوج أو باركود" oninput="showProducts()">
-<button class="action" onclick="startScanner()">📷 مسح الباركود</button>
-<div id="scannerBox" style="display:none;margin-top:12px">
-  <video id="scannerVideo" autoplay playsinline style="width:100%;border-radius:12px"></video>
-  <button class="danger" onclick="stopScanner()">إيقاف الكاميرا</button>
-  <p id="scannerMessage"></p>
-</div>
  <button class="action" onclick="startScanner()">📷 مسح الباركود</button>
 <div id="scannerBox" style="display:none;margin-top:12px">
   <video id="scannerVideo" autoplay playsinline
@@ -75,8 +69,8 @@ button{cursor:pointer}
 <h2 id="stockTitle">إضافة منتوج</h2>
 <input id="pname" placeholder="اسم المنتوج">
 <input id="barcode" placeholder="الباركود (اختياري)">
-<input id="cost" type="number" placeholder="سعر الشراء (اختياري)">
  <input id="price" type="number" placeholder="سعر البيع بالدينار">
+ <input id="cost" type="number" placeholder="سعر الشراء بالدينار (اختياري)">
 <input id="quantity" type="number" placeholder="الكمية">
 <button class="action" onclick="addProduct()" id="addBtn">إضافة المنتوج</button>
 </div>
@@ -91,6 +85,8 @@ button{cursor:pointer}
 <h2 id="reportTitle">التقارير</h2>
 <p id="salesLabel">عدد المبيعات</p><h2 id="salesCount">0</h2>
 <p id="revenueLabel">المداخيل الإجمالية</p><h2 id="revenue">0 دج</h2>
+ <p id="profitLabel">الربح اليومي</p>
+<h2 id="dailyProfit">0 دج</h2>
 <button class="danger" onclick="resetSales()" id="resetBtn">مسح سجل المبيعات</button>
 </div>
 </section>
@@ -198,7 +194,18 @@ function checkout(){
 }
 function report(){
  $('salesCount').textContent=sales.length;
- $('revenue').textContent=money(sales.reduce((s,x)=>s+x.total,0));
+
+let today=sales.filter(x=>
+ new Date(x.date).toDateString()===new Date().toDateString()
+);
+
+let dailyRevenue=today.reduce((s,x)=>s+x.total,0);
+$('revenue').textContent=money(dailyRevenue);
+let dailyProfit=today.reduce((s,x)=>
+ s+(x.items||[]).reduce((p,i)=>
+  p+(i.cost>0?(i.price-i.cost)*i.qty:0),0),0
+);
+ $('dailyProfit').textContent=money(dailyProfit);
 }
 function resetSales(){
  if(confirm(lang==='ar'?'مسح جميع المبيعات؟':'Effacer les ventes ?')){sales=[];save();report()}

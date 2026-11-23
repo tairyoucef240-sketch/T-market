@@ -130,12 +130,20 @@ function showProducts(){
  let q=$('search').value.toLowerCase();
  $('saleProducts').innerHTML=products.filter(p=>p.name.toLowerCase().includes(q)||p.barcode.includes(q)).map(p=>`<div class="product"><span>${p.name}<br><small>${money(p.price)} · ${lang==='ar'?'المتوفر':'Stock'}: ${p.qty}</small></span><button onclick="addCart(${p.id})">+ ${lang==='ar'?'إضافة':'Ajouter'}</button></div>`).join('')||'<p class="small">لا توجد منتجات</p>';
 }
-function addCart(id){
- let p=products.find(x=>x.id===id),item=cart.find(x=>x.id===id);
- if(!p||p.qty<1){alert(lang==='ar'?'الكمية غير متوفرة':'Stock insuffisant');return}
- if(item){if(item.qty>=p.qty)return;item.qty++}
- else cart.push({id:p.id,name:p.name,price:p.price,qty:1});
- updateCart();
+function addCart(id) {
+  const product = products.find(p => p.id === id);
+  if (!product) return;
+
+  const item = cart.find(p => p.id === id);
+
+  if (item) {
+    item.qty++;
+  } else {
+    cart.push({ ...product, qty: 1 });
+  }
+
+  updateCart();
+}
 }
 function updateCart(){
  $('cart').innerHTML=cart.map(x=>`<div class="product"><span>${x.name} × ${x.qty}</span><span>${money(x.price*x.qty)} <button onclick="removeCart(${x.id})">−</button></span></div>`).join('')||'<p class="small">السلة فارغة</p>';

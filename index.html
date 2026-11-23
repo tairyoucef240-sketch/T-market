@@ -192,6 +192,74 @@ if ('serviceWorker' in navigator) {
       .catch(error => console.log('SW error:', error));
   });
 }
+
+let scannerStream = null;
+let scannerRunning = false;
+
+async function startScanner() {
+  const video = document.getElementById("scannerVideo");
+  const box = document.getElementById("scannerBox");
+  const message = document.getElementById("scannerMessage");
+
+  if (!("BarcodeDetector" in window)) {
+    message.textContent = "المتصفح لا يدعم قراءة الباركود مباشرة.";
+    box.style.display = "block";
+    return;
+  }
+
+  try {
+    const detector = new BarcodeDetector({
+      formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39"]
+    });
+
+    scannerStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
+    });
+
+    video.srcObject = scannerStream;
+    box.style.display = "block";
+    scannerRunning = true;
+    message.textContent = "وجّه الكاميرا نحو الباركود...";
+
+    async function scan() {
+      if (!scannerRunning) return;
+
+      try {
+        const codes = await detector.detect(video);
+
+        if (codes.length) {
+          const code = codes[0].rawValue;
+          document.getElementById("search").value = code;
+          showProducts();
+          message.textContent = "تمت القراءة: " + code;
+          stopScanner();
+          return;
+        }
+      } catch (e) {}
+
+      if (scannerRunning) requestAnimationFrame(scan);
+    }
+
+    video.onloadeddata = scan;
+    await video.play();
+
+  } catch (error) {
+    message.textContent = "تعذر تشغيل الكاميرا. تحقق من صلاحية الكاميرا.";
+  }
+}
+
+function stopScanner() {
+  scannerRunning = false;
+
+  if (scannerStream) {
+    scannerStream.getTracks().forEach(track => track.stop());
+    scannerStream = null;
+  }
+
+  const video = document.getElementById("scannerVideo");
+  if (video) video.srcObject = null;
+}
+
 </script>
 </body>
 </html>

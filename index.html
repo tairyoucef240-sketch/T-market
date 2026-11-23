@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>T-MARKET</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f4f8;color:#172033;font-family:Arial,sans-serif}
+header{background:#12345a;color:white;padding:20px;text-align:center}
+header h1{margin:0;font-size:27px}
+header p{margin:7px 0 0;color:#d4e4f5}
+nav{display:flex;background:white;position:sticky;top:0;z-index:2;box-shadow:0 2px 8px #0001}
+nav button{flex:1;border:0;background:white;padding:15px 5px;font-weight:bold;color:#234}
+nav button.active{color:#087cce;border-bottom:3px solid #087cce}
+main{padding:15px;max-width:700px;margin:auto}
+.panel{display:none}.panel.active{display:block}
+.card{background:white;padding:16px;border-radius:13px;margin-bottom:13px;box-shadow:0 2px 8px #0001}
+h2{margin-top:5px;color:#12345a}
+input{width:100%;padding:12px;margin:6px 0 12px;border:1px solid #ccd5df;border-radius:8px;font-size:16px}
+button{cursor:pointer}
+.action{background:#087cce;color:white;border:0;padding:12px 16px;border-radius:8px;font-weight:bold}
+.danger{background:#d93636;color:white;border:0;padding:8px;border-radius:7px}
+.product{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #eee;padding:12px 0}
+.product button{padding:7px 10px;border:0;border-radius:7px;background:#e4f2ff;color:#075b9d}
+.total{font-size:23px;font-weight:bold;color:#07834c}
+.small{color:#64748b;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+<h1>T-MARKET</h1>
+<p id="subtitle">تسيير السوبيرات والمبيعات</p>
+</header>
+<nav>
+<button class="active" onclick="tab('sale',this)" id="navSale">البيع</button>
+<button onclick="tab('stock',this)" id="navStock">المخزون</button>
+<button onclick="tab('report',this)" id="navReport">التقارير</button>
+<button onclick="language()" id="langBtn">FR</button>
+</nav>
+<main>
+<section class="panel active" id="sale">
+<div class="card">
+<h2 id="saleTitle">نقطة البيع</h2>
+<input id="search" placeholder="ابحث عن منتوج أو باركود" oninput="showProducts()">
+<div id="saleProducts"></div>
+</div>
+<div class="card">
+<h2 id="cartTitle">السلة</h2>
+<div id="cart"></div>
+<p id="total" class="total">المجموع: 0 دج</p>
+<input id="paid" type="number" placeholder="المبلغ المدفوع">
+<p id="change">الباقي: 0 دج</p>
+<button class="action" onclick="checkout()" id="checkoutBtn">تأكيد البيع</button>
+</div>
+</section>
+
+<section class="panel" id="stock">
+<div class="card">
+<h2 id="stockTitle">إضافة منتوج</h2>
+<input id="pname" placeholder="اسم المنتوج">
+<input id="barcode" placeholder="الباركود (اختياري)">
+<input id="price" type="number" placeholder="سعر البيع بالدينار">
+<input id="quantity" type="number" placeholder="الكمية">
+<button class="action" onclick="addProduct()" id="addBtn">إضافة المنتوج</button>
+</div>
+<div class="card">
+<h2 id="listTitle">قائمة المنتجات</h2>
+<div id="stockProducts"></div>
+</div>
+</section>
+
+<section class="panel" id="report">
+<div class="card">
+<h2 id="reportTitle">التقارير</h2>
+<p id="salesLabel">عدد المبيعات</p><h2 id="salesCount">0</h2>
+<p id="revenueLabel">المداخيل الإجمالية</p><h2 id="revenue">0 دج</h2>
+<button class="danger" onclick="resetSales()" id="resetBtn">مسح سجل المبيعات</button>
+</div>
+</section>
+</main>
+<script>
+let products=JSON.parse(localStorage.getItem('tm_products')||'[]');
+let sales=JSON.parse(localStorage.getItem('tm_sales')||'[]');
+let cart=[];
+let lang='ar';
+const $=id=>document.getElementById(id);
+function save(){
+ localStorage.setItem('tm_products',JSON.stringify(products));
+ localStorage.setItem('tm_sales',JSON.stringify(sales));
+}
+function tab(id,btn){
+ document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+ document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+ $(id).classList.add('active');btn.classList.add('active');
+ showProducts();showStock();updateCart();report();
+}
+function money(n){return Number(n).toLocaleString()+' دج'}
+function addProduct(){
+ let name=$('pname').value.trim(),price=Number($('price').value),qty=Number($('quantity').value);
+ if(!name||price<=0||qty<0||$('quantity').value===''){alert(lang==='ar'?'أدخل معلومات صحيحة':'Informations invalides');return}
+ products.push({id:Date.now(),name,barcode:$('barcode').value.trim(),price,qty});
+ save();['pname','barcode','price','quantity'].forEach(x=>$(x).value='');
+ showStock();showProducts();alert(lang==='ar'?'تمت إضافة المنتوج':'Produit ajouté');
+}
+function showStock(){
+ $('stockProducts').innerHTML=products.map(p=>`<div class="product"><span>${p.name}<br><small>${p.qty} ${lang==='ar'?'قطعة':'unités'} · ${money(p.price)}</small></span><button onclick="deleteProduct(${p.id})">✕</button></div>`).join('')||'<p class="small">لا توجد منتجات</p>';
+}
+function deleteProduct(id){
+ if(confirm(lang==='ar'?'حذف المنتوج؟':'Supprimer ce produit ?')){
+ products=products.filter(p=>p.id!==id);save();showStock();showProducts();
+ }
+}
+function showProducts(){
+ let q=$('search').value.toLowerCase();
+ $('saleProducts').innerHTML=products.filter(p=>p.name.toLowerCase().includes(q)||p.barcode.includes(q)).map(p=>`<div class="product"><span>${p.name}<br><small>${money(p.price)} · ${lang==='ar'?'المتوفر':'Stock'}: ${p.qty}</small></span><button onclick="addCart(${p.id})">+ ${lang==='ar'?'إضافة':'Ajouter'}</button></div>`).join('')||'<p class="small">لا توجد منتجات</p>';
+}
+function addCart(id){
+ let p=products.find(x=>x.id===id),item=cart.find(x=>x.id===id);
+ if(!p||p.qty<1){alert(lang==='ar'?'الكمية غير متوفرة':'Stock insuffisant');return}
+ if(item){if(item.qty>=p.qty)return;item.qty++}
+ else cart.push({id:p.id,name:p.name,price:p.price,qty:1});
+ updateCart();
+}
+function updateCart(){
+ $('cart').innerHTML=cart.map(x=>`<div class="product"><span>${x.name} × ${x.qty}</span><span>${money(x.price*x.qty)} <button onclick="removeCart(${x.id})">−</button></span></div>`).join('')||'<p class="small">السلة فارغة</p>';
+ let t=cart.reduce((s,x)=>s+x.price*x.qty,0);
+ $('total').textContent=(lang==='ar'?'المجموع: ':'Total: ')+money(t);
+ $('change').textContent=(lang==='ar'?'الباقي: ':'Monnaie: ')+money(Math.max(0,Number($('paid').value||0)-t));
+}
+function removeCart(id){
+ let x=cart.find(p=>p.id===id);if(x){x.qty--;if(x.qty<=0)cart=cart.filter(p=>p.id!==id)}
+ updateCart();
+}
+$('paid').addEventListener('input',updateCart);
+function checkout(){
+ let total=cart.reduce((s,x)=>s+x.price*x.qty,0),paid=Number($('paid').value);
+ if(!cart.length){alert('السلة فارغة');return}
+ if(paid<total){alert(lang==='ar'?'المبلغ المدفوع غير كافٍ':'Montant insuffisant');return}
+ cart.forEach(x=>{let p=products.find(p=>p.id===x.id);p.qty-=x.qty});
+ sales.push({date:new Date().toISOString(),total});
+ save();cart=[];$('paid').value='';updateCart();showStock();showProducts();report();
+ alert(lang==='ar'?'تم البيع بنجاح':'Vente réussie');
+}
+function report(){
+ $('salesCount').textContent=sales.length;
+ $('revenue').textContent=money(sales.reduce((s,x)=>s+x.total,0));
+}
+function resetSales(){
+ if(confirm(lang==='ar'?'مسح جميع المبيعات؟':'Effacer les ventes ?')){sales=[];save();report()}
+}
+function language(){
+ lang=lang==='ar'?'fr':'ar';
+ document.documentElement.lang=lang;
+ document.documentElement.dir=lang==='ar'?'rtl':'ltr';
+ let ar=lang==='ar';
+ $('subtitle').textContent=ar?'تسيير السوبيرات والمبيعات':'Gestion de supermarché';
+ $('navSale').textContent=ar?'البيع':'Vente';
+ $('navStock').textContent=ar?'المخزون':'Stock';
+ $('navReport').textContent=ar?'التقارير':'Rapports';
+ $('langBtn').textContent=ar?'FR':'AR';
+ $('saleTitle').textContent=ar?'نقطة البيع':'Point de vente';
+ $('cartTitle').textContent=ar?'السلة':'Panier';
+ $('search').placeholder=ar?'ابحث عن منتوج أو باركود':'Rechercher un produit ou code-barres';
+ $('stockTitle').textContent=ar?'إضافة منتوج':'Ajouter un produit';
+ $('pname').placeholder=ar?'اسم المنتوج':'Nom du produit';
+ $('barcode').placeholder=ar?'الباركود (اختياري)':'Code-barres (optionnel)';
+ $('price').placeholder=ar?'سعر البيع بالدينار':'Prix de vente en DA';
+ $('quantity').placeholder=ar?'الكمية':'Quantité';
+ $('addBtn').textContent=ar?'إضافة المنتوج':'Ajouter';
+ $('listTitle').textContent=ar?'قائمة المنتجات':'Liste des produits';
+ $('reportTitle').textContent=ar?'التقارير':'Rapports';
+ $('salesLabel').textContent=ar?'عدد المبيعات':'Nombre de ventes';
+ $('revenueLabel').textContent=ar?'المداخيل الإجمالية':'Revenu total';
+ $('resetBtn').textContent=ar?'مسح سجل المبيعات':'Effacer les ventes';
+ $('checkoutBtn').textContent=ar?'تأكيد البيع':'Valider la vente';
+ showProducts();showStock();updateCart();
+}
+showProducts();showStock();updateCart();report();
+</script>
+</body>
+</html>

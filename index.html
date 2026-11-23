@@ -75,7 +75,8 @@ button{cursor:pointer}
 <h2 id="stockTitle">إضافة منتوج</h2>
 <input id="pname" placeholder="اسم المنتوج">
 <input id="barcode" placeholder="الباركود (اختياري)">
-<input id="price" type="number" placeholder="سعر البيع بالدينار">
+<input id="cost" type="number" placeholder="سعر الشراء (اختياري)">
+ <input id="price" type="number" placeholder="سعر البيع بالدينار">
 <input id="quantity" type="number" placeholder="الكمية">
 <button class="action" onclick="addProduct()" id="addBtn">إضافة المنتوج</button>
 </div>
@@ -112,11 +113,31 @@ function tab(id,btn){
 }
 function money(n){return Number(n).toLocaleString()+' دج'}
 function addProduct(){
- let name=$('pname').value.trim(),price=Number($('price').value),qty=Number($('quantity').value);
- if(!name||price<=0||qty<0||$('quantity').value===''){alert(lang==='ar'?'أدخل معلومات صحيحة':'Informations invalides');return}
- products.push({id:Date.now(),name,barcode:$('barcode').value.trim(),price,qty});
- save();['pname','barcode','price','quantity'].forEach(x=>$(x).value='');
- showStock();showProducts();alert(lang==='ar'?'تمت إضافة المنتوج':'Produit ajouté');
+  let name=$('pname').value.trim();
+  let price=Number($('price').value);
+  let cost=Number($('cost').value || 0);
+  let qty=Number($('quantity').value);
+
+  if(!name || price<=0 || qty<0 || $('quantity').value===''){
+    alert(lang==='ar'?'أدخل معلومات صحيحة':'Informations invalides');
+    return;
+  }
+
+  products.push({
+    id:Date.now(),
+    name,
+    barcode:$('barcode').value.trim(),
+    price,
+    cost,
+    qty
+  });
+
+  save();
+  ['pname','barcode','price','cost','quantity'].forEach(x=>$(x).value='');
+  showStock();
+  showProducts();
+  alert(lang==='ar'?'تمت إضافة المنتوج':'Produit ajouté');
+
 }
 function showStock(){
  $('stockProducts').innerHTML=products.map(p=>`<div class="product"><span>${p.name}<br><small>${p.qty} ${lang==='ar'?'قطعة':'unités'} · ${money(p.price)}</small></span><button onclick="deleteProduct(${p.id})">✕</button></div>`).join('')||'<p class="small">لا توجد منتجات</p>';
@@ -168,6 +189,7 @@ function checkout(){
     id: x.id,
     name: x.name,
     price: x.price,
+   cost: x.cost || 0,
     qty: x.qty
   }))
 });

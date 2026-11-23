@@ -47,6 +47,12 @@ button{cursor:pointer}
 <input id="search" placeholder="ابحث عن منتوج أو باركود" oninput="showProducts()">
 <button class="action" onclick="startScanner()">📷 مسح الباركود</button>
 <div id="scannerBox" style="display:none;margin-top:12px">
+  <video id="scannerVideo" autoplay playsinline style="width:100%;border-radius:12px"></video>
+  <button class="danger" onclick="stopScanner()">إيقاف الكاميرا</button>
+  <p id="scannerMessage"></p>
+</div>
+ <button class="action" onclick="startScanner()">📷 مسح الباركود</button>
+<div id="scannerBox" style="display:none;margin-top:12px">
   <video id="scannerVideo" autoplay playsinline
     style="width:100%;border-radius:12px"></video>
   <button class="danger" onclick="stopScanner()">إيقاف الكاميرا</button>
